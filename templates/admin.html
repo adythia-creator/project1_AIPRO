@@ -8,7 +8,7 @@
     <h1 class="text-3xl font-black font-brand text-white mt-2">Katalog & Manajemen Pesanan</h1>
     <p class="text-zinc-400 text-xs mt-1">Kelola stok, ubah data barang, dan perbarui status proses pengiriman barang pesanan.</p>
   </div>
-  <button onclick="openProductModal()" class="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl text-xs uppercase tracking-wider transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 self-start sm:self-auto">
+  <button type="button" onclick="openProductModal()" class="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl text-xs uppercase tracking-wider transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 self-start sm:self-auto">
     <i class="fa-solid fa-plus"></i>
     <span>Tambah Barang Baru</span>
   </button>
@@ -16,21 +16,21 @@
 
 <!-- 4 TAB SWITCHER PENJUAL -->
 <div class="flex border-b border-zinc-800 mb-6 space-x-6 text-sm overflow-x-auto pb-1">
-  <button onclick="switchAdminTab('catalog')" id="btnTabCatalog" class="pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap">
+  <button type="button" onclick="switchAdminTab('catalog')" id="btnTabCatalog" class="pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap">
     <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Katalog Barang Penjual
   </button>
-  <button onclick="switchAdminTab('stockTable')" id="btnTabTable" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+  <button type="button" onclick="switchAdminTab('stockTable')" id="btnTabTable" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
     <i class="fa-solid fa-table-list mr-1.5"></i> Tabel Persediaan Stok
   </button>
-  <button onclick="switchAdminTab('orders')" id="btnTabOrders" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+  <button type="button" onclick="switchAdminTab('orders')" id="btnTabOrders" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
     <i class="fa-solid fa-inbox mr-1.5"></i> Riwayat Pesanan Masuk
   </button>
-  <button onclick="switchAdminTab('completed')" id="btnTabCompleted" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+  <button type="button" onclick="switchAdminTab('completed')" id="btnTabCompleted" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
     <i class="fa-solid fa-circle-check mr-1.5"></i> Barang Selesai Diproses
   </button>
 </div>
 
-<!-- 1. TAB KATALOG PENJUAL (DENGAN EDIT & HAPUS) -->
+<!-- 1. TAB KATALOG PENJUAL -->
 <div id="secAdminCatalog">
   <div id="adminCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 </div>
@@ -52,7 +52,7 @@
   </div>
 </div>
 
-<!-- 3. TAB RIWAYAT PESANAN MASUK (ADA TOMBOL PROSES) -->
+<!-- 3. TAB RIWAYAT PESANAN MASUK -->
 <div id="secAdminOrders" class="hidden">
   <div class="overflow-x-auto border border-zinc-800 rounded-2xl bg-zinc-900/60">
     <table class="w-full text-left text-sm text-zinc-300">
@@ -100,7 +100,7 @@
   <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
     <div class="flex justify-between items-center pb-3 border-b border-zinc-800 mb-4">
       <h2 id="modalTitle" class="text-lg font-bold font-brand text-white">Kelola Produk</h2>
-      <button onclick="closeModal('productModal')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      <button type="button" onclick="closeModal('productModal')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
     <form onsubmit="handleSaveProduct(event)" class="space-y-4">
@@ -187,7 +187,7 @@
     const prods = getProducts();
     const orders = getOrders();
 
-    // 1. Render Katalog Penjual
+    // 1. Render Kartu Katalog Penjual
     const cardsGrid = document.getElementById('adminCardsGrid');
     cardsGrid.innerHTML = prods.map(p => `
       <div class="card-luxe rounded-2xl overflow-hidden flex flex-col border border-zinc-800">
@@ -203,11 +203,11 @@
           <div class="text-amber-400 font-extrabold text-lg font-brand mt-4 mb-4">${formatRupiah(p.price)}</div>
           
           <div class="grid grid-cols-2 gap-2 pt-3 border-t border-zinc-800">
-            <button onclick="editProduct('${p.id}')" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5">
+            <button type="button" onclick="editProduct('${p.id}')" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5">
               <i class="fa-solid fa-pen-to-square"></i>
               <span>Edit Produk</span>
             </button>
-            <button onclick="deleteProduct('${p.id}')" class="py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-rose-900/50">
+            <button type="button" onclick="deleteProduct('${p.id}')" class="py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-rose-900/50">
               <i class="fa-solid fa-trash-can"></i>
               <span>Hapus</span>
             </button>
@@ -234,8 +234,8 @@
           </span>
         </td>
         <td class="p-4 text-right space-x-2">
-          <button onclick="editProduct('${p.id}')" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-semibold">Edit</button>
-          <button onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs font-semibold">Hapus</button>
+          <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-semibold">Edit</button>
+          <button type="button" onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs font-semibold">Hapus</button>
         </td>
       </tr>
     `).join('');
@@ -261,7 +261,7 @@
         </td>
         <td class="p-4 font-black text-amber-400 text-sm font-brand">${formatRupiah(ord.total)}</td>
         <td class="p-4 text-right">
-          <button onclick="processOrder(${ord.id})" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md shadow-amber-500/20 flex items-center gap-1.5 ml-auto">
+          <button type="button" onclick="processOrder(${ord.id})" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md shadow-amber-500/20 flex items-center gap-1.5 ml-auto">
             <i class="fa-solid fa-bolt-lightning text-[10px]"></i>
             <span>Proses</span>
           </button>
@@ -296,7 +296,6 @@
     `).join('');
   }
 
-  // Fungsi Ketika Tombol "Proses" Diklik
   function processOrder(orderId) {
     let orders = getOrders();
     const orderIndex = orders.findIndex(o => o.id === orderId);
