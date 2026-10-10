@@ -1,0 +1,385 @@
+{% extends "layout.html" %}
+{% block title %}Panel Penjual | GacorMart{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-800">
+  <div>
+    <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">Portal Penjual</span>
+    <h1 class="text-3xl font-black font-brand text-white mt-2">Katalog & Manajemen Pesanan</h1>
+    <p class="text-zinc-400 text-xs mt-1">Kelola stok, ubah data barang, dan perbarui status proses pengiriman barang pesanan.</p>
+  </div>
+  <button onclick="openProductModal()" class="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl text-xs uppercase tracking-wider transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 self-start sm:self-auto">
+    <i class="fa-solid fa-plus"></i>
+    <span>Tambah Barang Baru</span>
+  </button>
+</div>
+
+<!-- 4 TAB SWITCHER PENJUAL -->
+<div class="flex border-b border-zinc-800 mb-6 space-x-6 text-sm overflow-x-auto pb-1">
+  <button onclick="switchAdminTab('catalog')" id="btnTabCatalog" class="pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap">
+    <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Katalog Barang Penjual
+  </button>
+  <button onclick="switchAdminTab('stockTable')" id="btnTabTable" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+    <i class="fa-solid fa-table-list mr-1.5"></i> Tabel Persediaan Stok
+  </button>
+  <button onclick="switchAdminTab('orders')" id="btnTabOrders" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+    <i class="fa-solid fa-inbox mr-1.5"></i> Riwayat Pesanan Masuk
+  </button>
+  <button onclick="switchAdminTab('completed')" id="btnTabCompleted" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap">
+    <i class="fa-solid fa-circle-check mr-1.5"></i> Barang Selesai Diproses
+  </button>
+</div>
+
+<!-- 1. TAB KATALOG PENJUAL (DENGAN EDIT & HAPUS) -->
+<div id="secAdminCatalog">
+  <div id="adminCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+</div>
+
+<!-- 2. TAB TABEL PERSEDIAAN STOK -->
+<div id="secAdminTable" class="hidden">
+  <div class="overflow-x-auto border border-zinc-800 rounded-2xl bg-zinc-900/60">
+    <table class="w-full text-left text-sm text-zinc-300">
+      <thead class="bg-zinc-900 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+        <tr>
+          <th class="p-4">Barang</th>
+          <th class="p-4">Harga Satuan</th>
+          <th class="p-4">Persediaan Stok</th>
+          <th class="p-4 text-right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="adminTableBody" class="divide-y divide-zinc-800"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 3. TAB RIWAYAT PESANAN MASUK (ADA TOMBOL PROSES) -->
+<div id="secAdminOrders" class="hidden">
+  <div class="overflow-x-auto border border-zinc-800 rounded-2xl bg-zinc-900/60">
+    <table class="w-full text-left text-sm text-zinc-300">
+      <thead class="bg-zinc-900 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+        <tr>
+          <th class="p-4">ID Pesanan</th>
+          <th class="p-4">Pelanggan</th>
+          <th class="p-4">Item Dipesan</th>
+          <th class="p-4">Alamat & Bank</th>
+          <th class="p-4">Total</th>
+          <th class="p-4 text-right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="adminOrdersBody" class="divide-y divide-zinc-800"></tbody>
+    </table>
+  </div>
+  <div id="emptyOrdersBox" class="hidden text-center py-16 text-zinc-500 text-xs">
+    Tidak ada pesanan baru yang menunggu diproses.
+  </div>
+</div>
+
+<!-- 4. TAB BARANG SELESAI DIPROSES -->
+<div id="secAdminCompleted" class="hidden">
+  <div class="overflow-x-auto border border-zinc-800 rounded-2xl bg-zinc-900/60">
+    <table class="w-full text-left text-sm text-zinc-300">
+      <thead class="bg-zinc-900 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+        <tr>
+          <th class="p-4">ID Pesanan</th>
+          <th class="p-4">Pelanggan</th>
+          <th class="p-4">Daftar Barang Selesai</th>
+          <th class="p-4">Status Pengiriman</th>
+          <th class="p-4 text-right">Total Transaksi</th>
+        </tr>
+      </thead>
+      <tbody id="adminCompletedBody" class="divide-y divide-zinc-800"></tbody>
+    </table>
+  </div>
+  <div id="emptyCompletedBox" class="hidden text-center py-16 text-zinc-500 text-xs">
+    Belum ada barang atau pesanan yang selesai diproses.
+  </div>
+</div>
+
+<!-- MODAL TAMBAH / UBAH PRODUK -->
+<div id="productModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+    <div class="flex justify-between items-center pb-3 border-b border-zinc-800 mb-4">
+      <h2 id="modalTitle" class="text-lg font-bold font-brand text-white">Kelola Produk</h2>
+      <button onclick="closeModal('productModal')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form onsubmit="handleSaveProduct(event)" class="space-y-4">
+      <input type="hidden" id="pId">
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama Barang</label>
+        <input type="text" id="pName" required placeholder="Contoh: Jam Tangan Elegan" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Keterangan / Deskripsi</label>
+        <textarea id="pDesc" rows="3" required placeholder="Detail spesifikasi produk..." class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Harga Satuan (Rp)</label>
+          <input type="number" id="pPrice" min="0" required placeholder="0" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Stok Barang</label>
+          <input type="number" id="pStock" min="0" required placeholder="0" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-2">Foto Barang</label>
+        <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer">
+            <input type="radio" name="imgSrc" value="online" checked onchange="toggleImgInput()" class="accent-amber-500">
+            <span class="text-zinc-300">Link Online</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer">
+            <input type="radio" name="imgSrc" value="upload" onchange="toggleImgInput()" class="accent-amber-500">
+            <span class="text-zinc-300">File Galeri</span>
+          </label>
+        </div>
+
+        <div id="urlBox">
+          <input type="url" id="pImageUrl" placeholder="https://..." class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div id="fileBox" class="hidden">
+          <input type="file" id="pImageFile" accept="image/*" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-zinc-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-zinc-800 file:text-zinc-200">
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-4 border-t border-zinc-800">
+        <button type="button" onclick="closeModal('productModal')" class="px-4 py-2.5 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs font-bold rounded-xl transition">Batal</button>
+        <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition">Simpan Barang</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function switchAdminTab(tab) {
+    document.getElementById('secAdminCatalog').classList.toggle('hidden', tab !== 'catalog');
+    document.getElementById('secAdminTable').classList.toggle('hidden', tab !== 'stockTable');
+    document.getElementById('secAdminOrders').classList.toggle('hidden', tab !== 'orders');
+    document.getElementById('secAdminCompleted').classList.toggle('hidden', tab !== 'completed');
+
+    const btnC = document.getElementById('btnTabCatalog');
+    const btnT = document.getElementById('btnTabTable');
+    const btnO = document.getElementById('btnTabOrders');
+    const btnD = document.getElementById('btnTabCompleted');
+
+    [btnC, btnT, btnO, btnD].forEach(b => {
+      b.className = "pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white whitespace-nowrap";
+    });
+
+    if (tab === 'catalog') btnC.className = "pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap";
+    if (tab === 'stockTable') btnT.className = "pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap";
+    if (tab === 'orders') btnO.className = "pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap";
+    if (tab === 'completed') btnD.className = "pb-3 border-b-2 border-amber-500 text-amber-400 font-bold whitespace-nowrap";
+  }
+
+  function toggleImgInput() {
+    const val = document.querySelector('input[name="imgSrc"]:checked').value;
+    document.getElementById('urlBox').classList.toggle('hidden', val !== 'online');
+    document.getElementById('fileBox').classList.toggle('hidden', val !== 'upload');
+  }
+
+  function renderAdminData() {
+    const prods = getProducts();
+    const orders = getOrders();
+
+    // 1. Render Katalog Penjual
+    const cardsGrid = document.getElementById('adminCardsGrid');
+    cardsGrid.innerHTML = prods.map(p => `
+      <div class="card-luxe rounded-2xl overflow-hidden flex flex-col border border-zinc-800">
+        <div class="h-48 w-full bg-zinc-950 overflow-hidden relative">
+          <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover">
+          <span class="absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-full font-bold ${p.stock > 0 ? 'bg-zinc-950/80 border border-zinc-800 text-amber-400' : 'bg-rose-950/80 border border-rose-800 text-rose-300'}">
+            ${p.stock > 0 ? 'Stok: ' + p.stock : 'Habis (Disembunyikan)'}
+          </span>
+        </div>
+        <div class="p-5 flex flex-col flex-grow">
+          <h3 class="font-bold text-white text-base mb-1">${p.name}</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed flex-grow line-clamp-2">${p.desc}</p>
+          <div class="text-amber-400 font-extrabold text-lg font-brand mt-4 mb-4">${formatRupiah(p.price)}</div>
+          
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-zinc-800">
+            <button onclick="editProduct('${p.id}')" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Edit Produk</span>
+            </button>
+            <button onclick="deleteProduct('${p.id}')" class="py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-rose-900/50">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>Hapus</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // 2. Render Tabel Persediaan Stok
+    const tableBody = document.getElementById('adminTableBody');
+    tableBody.innerHTML = prods.map(p => `
+      <tr class="hover:bg-zinc-900/60">
+        <td class="p-4 flex items-center space-x-3">
+          <img src="${p.image}" class="w-10 h-10 object-cover rounded-xl bg-zinc-950 border border-zinc-800">
+          <div>
+            <div class="font-bold text-zinc-200">${p.name}</div>
+            <div class="text-zinc-500 text-xs line-clamp-1">${p.desc}</div>
+          </div>
+        </td>
+        <td class="p-4 text-zinc-200 font-bold font-mono">${formatRupiah(p.price)}</td>
+        <td class="p-4">
+          <span class="px-2.5 py-1 text-xs rounded-full font-bold ${p.stock > 0 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">
+            ${p.stock > 0 ? p.stock + ' unit' : 'Habis'}
+          </span>
+        </td>
+        <td class="p-4 text-right space-x-2">
+          <button onclick="editProduct('${p.id}')" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-semibold">Edit</button>
+          <button onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs font-semibold">Hapus</button>
+        </td>
+      </tr>
+    `).join('');
+
+    // 3. Render Riwayat Pesanan Masuk (Filter: status !== 'Diproses')
+    const incomingOrders = orders.filter(o => o.status !== 'Diproses');
+    const ordersBody = document.getElementById('adminOrdersBody');
+    document.getElementById('emptyOrdersBox').classList.toggle('hidden', incomingOrders.length > 0);
+
+    ordersBody.innerHTML = incomingOrders.map(ord => `
+      <tr class="hover:bg-zinc-900/60 transition">
+        <td class="p-4 text-xs font-mono text-zinc-400">#${ord.id}<br><span class="text-zinc-500">${ord.date}</span></td>
+        <td class="p-4 text-xs">
+          <div class="font-bold text-zinc-200">${ord.customer.name}</div>
+          <div class="text-zinc-400 font-mono">${ord.customer.phone}</div>
+        </td>
+        <td class="p-4 text-xs text-zinc-300">
+          ${ord.items.map(it => `<div>• ${it.name}</div>`).join('')}
+        </td>
+        <td class="p-4 text-xs">
+          <div class="text-amber-400 font-semibold">${ord.payment}</div>
+          <div class="text-zinc-500 line-clamp-1">${ord.customer.address}</div>
+        </td>
+        <td class="p-4 font-black text-amber-400 text-sm font-brand">${formatRupiah(ord.total)}</td>
+        <td class="p-4 text-right">
+          <button onclick="processOrder(${ord.id})" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md shadow-amber-500/20 flex items-center gap-1.5 ml-auto">
+            <i class="fa-solid fa-bolt-lightning text-[10px]"></i>
+            <span>Proses</span>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    // 4. Render Barang Selesai Diproses (Filter: status === 'Diproses')
+    const completedOrders = orders.filter(o => o.status === 'Diproses');
+    const completedBody = document.getElementById('adminCompletedBody');
+    document.getElementById('emptyCompletedBox').classList.toggle('hidden', completedOrders.length > 0);
+
+    completedBody.innerHTML = completedOrders.map(ord => `
+      <tr class="hover:bg-zinc-900/60 transition">
+        <td class="p-4 text-xs font-mono text-zinc-400">#${ord.id}<br><span class="text-zinc-500">${ord.date}</span></td>
+        <td class="p-4 text-xs">
+          <div class="font-bold text-zinc-200">${ord.customer.name}</div>
+          <div class="text-zinc-400 font-mono">${ord.customer.phone}</div>
+        </td>
+        <td class="p-4 text-xs text-zinc-300">
+          ${ord.items.map(it => `<div>• ${it.name} (${formatRupiah(it.price)})</div>`).join('')}
+        </td>
+        <td class="p-4 text-xs">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Barang Selesai Diproses
+          </span>
+          <div class="text-zinc-500 text-[10px] mt-1">${ord.customer.address}</div>
+        </td>
+        <td class="p-4 text-right font-black text-amber-400 text-sm font-brand">${formatRupiah(ord.total)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Fungsi Ketika Tombol "Proses" Diklik
+  function processOrder(orderId) {
+    let orders = getOrders();
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex > -1) {
+      orders[orderIndex].status = 'Diproses';
+      saveOrders(orders);
+      renderAdminData();
+      switchAdminTab('completed');
+    }
+  }
+
+  function openProductModal() {
+    document.getElementById('modalTitle').innerText = "Tambah Barang Baru";
+    document.getElementById('pId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pStock').value = '';
+    document.getElementById('pImageUrl').value = '';
+    document.getElementById('pImageFile').value = '';
+    document.getElementById('productModal').classList.remove('hidden');
+  }
+
+  function editProduct(id) {
+    const prods = getProducts();
+    const p = prods.find(item => item.id === id);
+    if (!p) return;
+    document.getElementById('modalTitle').innerText = "Edit Detail Barang";
+    document.getElementById('pId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pDesc').value = p.desc;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pStock').value = p.stock;
+    document.getElementById('pImageUrl').value = p.image || '';
+    document.getElementById('productModal').classList.remove('hidden');
+  }
+
+  function deleteProduct(id) {
+    if (confirm('Hapus produk ini dari toko?')) {
+      let prods = getProducts().filter(p => p.id !== id);
+      saveProducts(prods);
+      renderAdminData();
+    }
+  }
+
+  async function handleSaveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('pId').value || 'prod-' + Date.now();
+    const name = document.getElementById('pName').value;
+    const desc = document.getElementById('pDesc').value;
+    const price = parseInt(document.getElementById('pPrice').value) || 0;
+    const stock = parseInt(document.getElementById('pStock').value) || 0;
+
+    let finalImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
+    const mode = document.querySelector('input[name="imgSrc"]:checked').value;
+
+    if (mode === 'upload') {
+      const f = document.getElementById('pImageFile');
+      if (f.files && f.files[0]) {
+        finalImg = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(f.files[0]);
+        });
+      }
+    } else {
+      const u = document.getElementById('pImageUrl').value.trim();
+      if (u) finalImg = u;
+    }
+
+    let prods = getProducts();
+    const idx = prods.findIndex(p => p.id === id);
+    if (idx > -1) {
+      prods[idx] = { ...prods[idx], name, desc, price, stock, image: finalImg };
+    } else {
+      prods.push({ id, name, desc, price, stock, image: finalImg });
+    }
+
+    saveProducts(prods);
+    closeModal('productModal');
+    renderAdminData();
+  }
+
+  window.addEventListener('DOMContentLoaded', renderAdminData);
+</script>
+{% endblock %}

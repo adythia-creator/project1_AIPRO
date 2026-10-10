@@ -1,0 +1,135 @@
+{% extends "layout.html" %}
+{% block title %}Riwayat Belanja | GacorMart{% endblock %}
+
+{% block content %}
+<div class="mb-8 pb-4 border-b border-zinc-800">
+  <h1 class="text-2xl font-black font-brand text-white">Riwayat Transaksi Saya</h1>
+  <p class="text-zinc-400 text-xs mt-1">Daftar transaksi dan pantauan status proses pesanan Anda.</p>
+</div>
+
+<!-- KOTAK PERINGATAN KETIKA BELUM LOGIN -->
+<div id="authRequiredBox" class="text-center py-24 card-luxe rounded-3xl max-w-md mx-auto">
+  <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+    <i class="fa-solid fa-lock"></i>
+  </div>
+  <h3 class="text-lg font-bold font-brand text-white mb-1">Akses Riwayat Terkunci</h3>
+  <p class="text-zinc-400 text-xs mb-6 px-6 leading-relaxed">
+    Anda harus login sebagai pembeli terlebih dahulu untuk melihat catatan transaksi dan status pesanan Anda.
+  </p>
+  <button type="button" onclick="openBuyerLoginModal(renderHistory)" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20">
+    <i class="fa-solid fa-user-check mr-1.5"></i> Login Akun Pembeli
+  </button>
+</div>
+
+<!-- KONTEN RIWAYAT (HANYA TERBUKA KETIKA SUDAH LOGIN) -->
+<div id="historyContentWrapper" class="hidden">
+  <!-- BANNER NOTIFIKASI BARANG SELESAI DIPROSES -->
+  <div id="processedAlertBox" class="hidden mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between shadow-lg shadow-amber-500/5">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-lg">
+        <i class="fa-solid fa-box-check"></i>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-amber-300">Pemberitahuan Pesanan</h3>
+        <p id="processedAlertText" class="text-xs text-zinc-300 mt-0.5">Pesanan Anda telah selesai diproses oleh penjual dan sedang dipersiapkan untuk dikirim.</p>
+      </div>
+    </div>
+    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-zinc-950">
+      Pesanan Diproses
+    </span>
+  </div>
+
+  <div id="historyListContainer" class="space-y-4"></div>
+
+  <div id="emptyHistoryBox" class="hidden text-center py-28 card-luxe rounded-3xl">
+    <i class="fa-solid fa-receipt text-4xl text-zinc-600 mb-3"></i>
+    <h3 class="text-base font-bold text-zinc-300">Belum Ada Transaksi</h3>
+    <p class="text-zinc-500 text-xs mt-1">Anda belum memiliki riwayat pembelian barang.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function renderHistory() {
+    const user = getBuyerSession();
+    const authBox = document.getElementById('authRequiredBox');
+    const contentWrapper = document.getElementById('historyContentWrapper');
+
+    // CEK APAKAH PEMBELI SUDAH LOGIN
+    if (!user) {
+      authBox.classList.remove('hidden');
+      contentWrapper.classList.add('hidden');
+      return;
+    }
+
+    authBox.classList.add('hidden');
+    contentWrapper.classList.remove('hidden');
+
+    const allOrders = getOrders();
+    // Filter pesanan sesuai nomor telepon / nama pembeli yang login
+    const orders = allOrders.filter(o => o.customer && (o.customer.phone === user.phone || o.customer.name === user.name));
+
+    const container = document.getElementById('historyListContainer');
+    const emptyBox = document.getElementById('emptyHistoryBox');
+    const alertBox = document.getElementById('processedAlertBox');
+    const alertText = document.getElementById('processedAlertText');
+
+    emptyBox.classList.toggle('hidden', orders.length > 0);
+
+    // Cek pesanan yang berstatus 'Diproses'
+    const processedOrders = orders.filter(o => o.status === 'Diproses');
+    if (processedOrders.length > 0) {
+      alertBox.classList.remove('hidden');
+      alertText.innerText = `Terdapat ${processedOrders.length} pesanan Anda dengan status "Pesanan Diproses" oleh pihak penjual.`;
+    } else {
+      alertBox.classList.add('hidden');
+    }
+
+    container.innerHTML = orders.map(ord => {
+      const isProcessed = ord.status === 'Diproses';
+
+      return `
+        <div class="card-luxe p-5 rounded-2xl border ${isProcessed ? 'border-amber-500/40 bg-zinc-900/90' : 'border-zinc-800'}">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs pb-3 mb-3 border-b border-zinc-800 gap-2">
+            <span class="text-zinc-400">Kode Transaksi: <strong class="text-zinc-200">#${ord.id}</strong> • ${ord.date}</span>
+            <div class="flex items-center space-x-2">
+              <span class="text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                Lunas (${ord.payment})
+              </span>
+              ${isProcessed 
+                ? `<span class="text-amber-400 font-extrabold bg-amber-500/15 px-3 py-1 rounded-full border border-amber-500/40 flex items-center gap-1.5 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    Pesanan Diproses
+                  </span>`
+                : `<span class="text-zinc-400 font-semibold bg-zinc-800 px-3 py-1 rounded-full border border-zinc-700">
+                    Menunggu Proses
+                  </span>`
+              }
+            </div>
+          </div>
+          <div class="space-y-1.5 mb-3">
+            ${ord.items.map(it => `
+              <div class="flex justify-between text-sm">
+                <span class="text-zinc-300 font-medium">${it.name}</span>
+                <span class="text-zinc-400 font-mono">${formatRupiah(it.price)}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-zinc-800 text-xs">
+            <span class="text-zinc-500">Penerima: ${ord.customer.name} (${ord.customer.phone})</span>
+            <div class="text-sm">Total: <span class="text-amber-400 font-bold font-brand">${formatRupiah(ord.total)}</span></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Callback otomatis saat sesi login pembeli berubah
+  function onBuyerSessionChanged() {
+    renderHistory();
+  }
+
+  window.addEventListener('DOMContentLoaded', renderHistory);
+</script>
+{% endblock %}

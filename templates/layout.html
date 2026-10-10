@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}GacorMart{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #09090b;
+      color: #fafaf9;
+    }
+    .font-brand { font-family: 'Space Grotesk', sans-serif; }
+    .card-luxe {
+      background: linear-gradient(180deg, #18181b 0%, #101012 100%);
+      border: 1px solid #27272a;
+      transition: all 0.25s ease;
+    }
+    .card-luxe:hover {
+      border-color: rgba(245, 158, 11, 0.45);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+
+  <!-- NAVBAR -->
+  <header class="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <!-- LOGO -->
+      <div id="brandLogoContainer" class="flex items-center space-x-3 cursor-pointer">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg shadow-amber-500/20">
+          G
+        </div>
+        <div>
+          <span class="text-2xl font-black font-brand tracking-tight text-white">
+            GACOR<span class="text-amber-500">MART</span>
+          </span>
+          <span id="roleSubtext" class="block text-[9px] uppercase tracking-widest text-zinc-400 font-bold -mt-1">Luxury Storefront</span>
+        </div>
+      </div>
+
+      <!-- NAV MENU PEMBELI -->
+      <nav id="buyerNavMenu" class="flex items-center space-x-3 sm:space-x-4">
+        <a href="/" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-zinc-300 hover:text-amber-400">
+          <i class="fa-solid fa-store mr-1.5"></i> Katalog
+        </a>
+        
+        <!-- RIWAYAT BELANJA (HANYA AKTIF JIKA SUDAH LOGIN) -->
+        <a href="/history" id="navHistoryLink" class="hidden px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-zinc-300 hover:text-amber-400">
+          <i class="fa-solid fa-receipt mr-1.5"></i> Riwayat Belanja
+        </a>
+
+        <a href="/cart" class="relative p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 text-zinc-200 hover:text-amber-400 transition">
+          <i class="fa-solid fa-cart-shopping text-base"></i>
+          <span id="globalCartBadge" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-zinc-950 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+        </a>
+        
+        <!-- STATUS LOGIN PEMBELI -->
+        <div id="buyerProfileNav" class="flex items-center">
+          <button type="button" onclick="openBuyerLoginModal()" id="btnBuyerLoginNav" class="px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition">
+            <i class="fa-solid fa-user mr-1.5"></i> Masuk / Daftar
+          </button>
+          <div id="buyerLoggedBox" class="hidden items-center gap-2">
+            <span id="buyerNameGreeting" class="text-xs text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl"></span>
+            <button type="button" onclick="logoutBuyer()" title="Keluar Akun Pembeli" class="text-zinc-500 hover:text-rose-400 p-2 text-xs">
+              <i class="fa-solid fa-power-off"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- PORTAL PENJUAL -->
+        <button type="button" onclick="triggerSellerLoginPrompt()" class="ml-2 px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Portal Penjual</span>
+        </button>
+      </nav>
+
+      <!-- NAV MENU PENJUAL (TERKUNCI DI DASHBOARD) -->
+      <nav id="sellerNavMenu" class="hidden items-center space-x-4">
+        <span class="text-xs uppercase font-extrabold tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-xl">
+          <i class="fa-solid fa-crown mr-1"></i> Mode Administrator
+        </span>
+        <button type="button" onclick="logoutSeller()" class="px-4 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-900/50 text-rose-300 text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Keluar Portal</span>
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- KONTEN -->
+  <main class="max-w-7xl mx-auto px-6 py-10 flex-grow w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- MODAL LOGIN PEMBELI -->
+  <div id="buyerLoginModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+          <i class="fa-solid fa-user-lock"></i>
+        </div>
+        <h3 class="text-xl font-bold font-brand text-white">Login Pembeli</h3>
+        <p class="text-zinc-400 text-xs mt-1">Masukkan data akun yang sudah terdaftar di users.json.</p>
+      </div>
+
+      <form onsubmit="handleBuyerLoginSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama / Username / Email</label>
+          <input type="text" id="loginIdentifier" required placeholder="Masukkan nama, username, atau email" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor Telepon / WhatsApp</label>
+          <input type="tel" id="loginPhone" required placeholder="08xxxxxxxxxx" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+
+        <div id="loginErrorMsg" class="hidden text-rose-400 text-xs bg-rose-950/40 border border-rose-900/60 p-2.5 rounded-xl"></div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/20">
+            Masuk Sekarang
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-800 text-center text-xs text-zinc-400">
+        Belum memiliki akun?
+        <button type="button" onclick="switchToRegisterModal()" class="text-amber-400 font-bold hover:underline ml-1">
+          Daftar Akun Baru
+        </button>
+      </div>
+      <div class="text-center mt-3">
+        <button type="button" onclick="closeModal('buyerLoginModal')" class="text-zinc-500 hover:text-zinc-300 text-xs">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL REGISTER PEMBELI -->
+  <div id="buyerRegisterModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh]">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <h3 class="text-xl font-bold font-brand text-white">Daftar Akun Pembeli</h3>
+        <p class="text-zinc-400 text-xs mt-1">Data pendaftaran akan tersimpan langsung ke file JSON.</p>
+      </div>
+
+      <form onsubmit="handleBuyerRegisterSubmit(event)" class="space-y-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama Lengkap</label>
+            <input type="text" id="regName" required placeholder="Contoh: Budi Santoso" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Username</label>
+            <input type="text" id="regUsername" required placeholder="budisantoso12" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Email</label>
+            <input type="email" id="regEmail" required placeholder="budi@example.com" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor Telepon / WhatsApp</label>
+            <input type="tel" id="regPhone" required placeholder="08xxxxxxxxxx" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1.5">Jenis Kelamin</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer hover:border-zinc-700">
+              <input type="radio" name="regGender" value="Pria" checked class="accent-amber-500">
+              <span class="text-xs text-zinc-200"><i class="fa-solid fa-mars mr-1 text-blue-400"></i> Pria</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer hover:border-zinc-700">
+              <input type="radio" name="regGender" value="Wanita" class="accent-amber-500">
+              <span class="text-xs text-zinc-200"><i class="fa-solid fa-venus mr-1 text-pink-400"></i> Wanita</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Password</label>
+            <input type="password" id="regPassword" required placeholder="Minimal 6 karakter" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Konfirmasi Password (Validasi 2x)</label>
+            <input type="password" id="regPasswordConfirm" required placeholder="Ulangi password di atas" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div id="registerErrorMsg" class="hidden text-rose-400 text-xs bg-rose-950/40 border border-rose-900/60 p-2.5 rounded-xl"></div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/20">
+            Daftar Akun Sekarang
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-800 text-center text-xs text-zinc-400">
+        Sudah memiliki akun terdaftar?
+        <button type="button" onclick="switchToLoginModal()" class="text-amber-400 font-bold hover:underline ml-1">
+          Masuk di Sini
+        </button>
+      </div>
+      <div class="text-center mt-3">
+        <button type="button" onclick="closeModal('buyerRegisterModal')" class="text-zinc-500 hover:text-zinc-300 text-xs">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KONFIRMASI PENJUAL -->
+  <div id="sellerConfirmModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center">
+      <div class="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 class="text-lg font-bold font-brand text-white mb-2">Konfirmasi Akses Penjual</h3>
+      <p class="text-zinc-400 text-xs mb-6 leading-relaxed">
+        Anda Ingin Login Sebagai Penjual? Halaman ini khusus untuk pengelolaan barang dan pesanan toko.
+      </p>
+      <div class="grid grid-cols-2 gap-3">
+        <button type="button" onclick="closeSellerConfirmModal(true)" class="w-full py-3 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-800 text-zinc-300 text-xs font-bold uppercase tracking-wider transition">
+          No (Kembali)
+        </button>
+        <button type="button" onclick="proceedToSellerLoginForm()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition">
+          Yes (Lanjut)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIN PASSWORD PENJUAL -->
+  <div id="sellerCredentialModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="text-center mb-5">
+        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="text-lg font-bold font-brand text-white">Autentikasi Penjual</h3>
+        <p class="text-zinc-500 text-[11px] mt-1">Username: <strong class="text-amber-400">admin</strong> | Sandi: <strong class="text-amber-400">admin123</strong></p>
+      </div>
+
+      <form onsubmit="handleSellerAuthSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Username</label>
+          <input type="text" id="sellerUsernameInput" required placeholder="admin" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Password</label>
+          <input type="password" id="sellerPasswordInput" required placeholder="admin123" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div class="flex justify-end space-x-2 pt-3">
+          <button type="button" onclick="closeModal('sellerCredentialModal')" class="px-4 py-2.5 border border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl">Batal</button>
+          <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition">
+            Masuk Portal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT ENGINE UTAMA -->
+  <script>
+    const defaultData = [
+      {
+        id: "prod-1",
+        name: "Jam Tangan Chrono Obsidian",
+        desc: "Kaca kristal safir tahan gores dengan bezel titanium berlapis PVD hitam matte.",
+        price: 850000,
+        stock: 5,
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80"
+      },
+      {
+        id: "prod-2",
+        name: "Wireless Headphone ANC Studio",
+        desc: "Driver audio 40mm resolusi tinggi dengan peredam bising aktif 32dB.",
+        price: 1350000,
+        stock: 4,
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80"
+      },
+      {
+        id: "prod-3",
+        name: "Kamera Lensa Prime 50mm",
+        desc: "Bukaan diafragma f/1.8 menghasilkan efek bokeh sinematik dan ketajaman tinggi.",
+        price: 3200000,
+        stock: 2,
+        image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80"
+      }
+    ];
+
+    function getProducts() {
+      return JSON.parse(localStorage.getItem('gm_products')) || defaultData;
+    }
+    function saveProducts(data) {
+      localStorage.setItem('gm_products', JSON.stringify(data));
+    }
+    function getCart() {
+      return JSON.parse(localStorage.getItem('gm_cart')) || [];
+    }
+    function saveCart(data) {
+      localStorage.setItem('gm_cart', JSON.stringify(data));
+      updateGlobalBadge();
+    }
+    function getOrders() {
+      return JSON.parse(localStorage.getItem('gm_orders')) || [];
+    }
+    function saveOrders(data) {
+      localStorage.setItem('gm_orders', JSON.stringify(data));
+    }
+
+    // SESI PEMBELI AKTIF
+    function getBuyerSession() {
+      return JSON.parse(localStorage.getItem('gm_buyer_user'));
+    }
+    function setBuyerSession(user) {
+      localStorage.setItem('gm_buyer_user', JSON.stringify(user));
+      syncBuyerNav();
+      if (typeof onBuyerSessionChanged === 'function') {
+        onBuyerSessionChanged();
+      }
+    }
+    function clearBuyerSession() {
+      localStorage.removeItem('gm_buyer_user');
+      syncBuyerNav();
+      if (window.location.pathname === '/history') {
+        window.location.reload();
+      }
+    }
+
+    function isSellerAuthenticated() {
+      return sessionStorage.getItem('gm_seller_logged') === 'true';
+    }
+
+    function formatRupiah(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+    }
+
+    function updateGlobalBadge() {
+      const badge = document.getElementById('globalCartBadge');
+      if (!badge) return;
+      const c = getCart();
+      if (c.length > 0) {
+        badge.innerText = c.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function switchToRegisterModal() {
+      closeModal('buyerLoginModal');
+      document.getElementById('registerErrorMsg').classList.add('hidden');
+      document.getElementById('buyerRegisterModal').classList.remove('hidden');
+    }
+
+    function switchToLoginModal() {
+      closeModal('buyerRegisterModal');
+      document.getElementById('loginErrorMsg').classList.add('hidden');
+      document.getElementById('buyerLoginModal').classList.remove('hidden');
+    }
+
+    // SUBMIT REGISTER (KIRIM DATA KE PYTHON / API & TERSIMPAN KE USERS.JSON)
+    async function handleBuyerRegisterSubmit(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('registerErrorMsg');
+      errBox.classList.add('hidden');
+
+      const name = document.getElementById('regName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const gender = document.querySelector('input[name="regGender"]:checked').value;
+      const pass = document.getElementById('regPassword').value;
+      const passConfirm = document.getElementById('regPasswordConfirm').value;
+
+      if (pass !== passConfirm) {
+        errBox.innerText = 'Validasi gagal: Password dan Konfirmasi Password tidak sesuai!';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (pass.length < 6) {
+        errBox.innerText = 'Password harus minimal 6 karakter.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, username, email, phone, gender, password: pass })
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          errBox.innerText = result.message || 'Registrasi gagal.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        alert('Registrasi berhasil! Data akun Anda telah disimpan ke users.json.');
+        switchToLoginModal();
+        document.getElementById('loginIdentifier').value = username;
+        document.getElementById('loginPhone').value = phone;
+      } catch (error) {
+        errBox.innerText = 'Gagal terhubung ke server python.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    // SUBMIT LOGIN (CEK KE PYTHON / API SESUAI DENGAN USERS.JSON)
+    let onBuyerLoginSuccessCallback = null;
+    function openBuyerLoginModal(callback) {
+      onBuyerLoginSuccessCallback = callback || null;
+      document.getElementById('loginErrorMsg').classList.add('hidden');
+      document.getElementById('loginIdentifier').value = '';
+      document.getElementById('loginPhone').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('buyerLoginModal').classList.remove('hidden');
+    }
+
+    async function handleBuyerLoginSubmit(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('loginErrorMsg');
+      errBox.classList.add('hidden');
+
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const phone = document.getElementById('loginPhone').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, phone, password: pass })
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          errBox.innerHTML = result.message + ' Jika belum punya akun, silakan <button type="button" onclick="switchToRegisterModal()" class="underline font-bold text-amber-400">Daftar Akun Baru</button>';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        // Simpan sesi pembeli yang sukses
+        setBuyerSession(result.user);
+        closeModal('buyerLoginModal');
+
+        if (onBuyerLoginSuccessCallback) {
+          onBuyerLoginSuccessCallback();
+          onBuyerLoginSuccessCallback = null;
+        }
+      } catch (error) {
+        errBox.innerText = 'Gagal terhubung ke server.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function logoutBuyer() {
+      clearBuyerSession();
+    }
+
+    function syncBuyerNav() {
+      const user = getBuyerSession();
+      const btnLogin = document.getElementById('btnBuyerLoginNav');
+      const boxLogged = document.getElementById('buyerLoggedBox');
+      const nameText = document.getElementById('buyerNameGreeting');
+      const historyLink = document.getElementById('navHistoryLink');
+
+      if (user) {
+        btnLogin.classList.add('hidden');
+        boxLogged.classList.remove('hidden');
+        boxLogged.classList.add('flex');
+        nameText.innerText = `${user.name} (${user.gender})`;
+        if (historyLink) historyLink.classList.remove('hidden');
+      } else {
+        btnLogin.classList.remove('hidden');
+        boxLogged.classList.add('hidden');
+        boxLogged.classList.remove('flex');
+        if (historyLink) historyLink.classList.add('hidden');
+      }
+    }
+
+    // ALUR AKSES PENJUAL
+    function triggerSellerLoginPrompt() {
+      if (isSellerAuthenticated()) {
+        window.location.href = '/admin';
+      } else {
+        document.getElementById('sellerConfirmModal').classList.remove('hidden');
+      }
+    }
+    function closeSellerConfirmModal(goCatalog) {
+      document.getElementById('sellerConfirmModal').classList.add('hidden');
+      if (goCatalog && window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    }
+    function proceedToSellerLoginForm() {
+      document.getElementById('sellerConfirmModal').classList.add('hidden');
+      document.getElementById('sellerUsernameInput').value = '';
+      document.getElementById('sellerPasswordInput').value = '';
+      document.getElementById('sellerCredentialModal').classList.remove('hidden');
+    }
+    function handleSellerAuthSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('sellerUsernameInput').value.trim();
+      const p = document.getElementById('sellerPasswordInput').value;
+      if (u === 'admin' && p === 'admin123') {
+        sessionStorage.setItem('gm_seller_logged', 'true');
+        closeModal('sellerCredentialModal');
+        window.location.href = '/admin';
+      } else {
+        alert('Username atau Sandi Penjual salah! (admin / admin123)');
+      }
+    }
+    function logoutSeller() {
+      sessionStorage.removeItem('gm_seller_logged');
+      window.location.href = '/';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('gm_products')) {
+        saveProducts(defaultData);
+      }
+      updateGlobalBadge();
+      syncBuyerNav();
+
+      const path = window.location.pathname;
+      const isSellerPage = path === '/admin';
+      const bNav = document.getElementById('buyerNavMenu');
+      const sNav = document.getElementById('sellerNavMenu');
+      const sub = document.getElementById('roleSubtext');
+      const brand = document.getElementById('brandLogoContainer');
+
+      if (isSellerPage) {
+        if (!isSellerAuthenticated()) {
+          alert('Akses Ditolak: Anda harus login sebagai penjual terlebih dahulu.');
+          window.location.href = '/';
+          return;
+        }
+        bNav.classList.add('hidden');
+        sNav.classList.remove('hidden');
+        sNav.classList.add('flex');
+        sub.innerText = "Panel Penjual";
+        brand.onclick = () => { window.location.href = '/admin'; };
+      } else {
+        bNav.classList.remove('hidden');
+        sNav.classList.add('hidden');
+        sub.innerText = "Luxury Storefront";
+        brand.onclick = () => { window.location.href = '/'; };
+      }
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

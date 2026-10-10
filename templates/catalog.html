@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block title %}Katalog Pembeli | GacorMart{% endblock %}
+
+{% block content %}
+<div class="mb-8 pb-4 border-b border-zinc-800 flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div>
+    <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">Storefront</span>
+    <h1 class="text-3xl font-black font-brand text-white mt-2">Katalog Belanja Pembeli</h1>
+    <p class="text-zinc-400 text-sm mt-1">Pilih produk favorit Anda. Stok diperbarui secara instan.</p>
+  </div>
+</div>
+
+<div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+<div id="emptyCatalogBox" class="hidden text-center py-28 card-luxe rounded-3xl">
+  <i class="fa-solid fa-box-open text-4xl text-zinc-600 mb-3"></i>
+  <h3 class="text-base font-bold text-zinc-300">Semua Produk Sedang Habis</h3>
+  <p class="text-zinc-500 text-xs mt-1">Silakan kunjungi lagi nanti ketika penjual telah menyetok ulang barang.</p>
+</div>
+
+<!-- MODAL FORMULIR BELI LANGSUNG -->
+<div id="directBuyModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+    <div class="flex justify-between items-start pb-3 border-b border-zinc-800 mb-4">
+      <div>
+        <h2 class="text-lg font-bold font-brand text-white">Formulir Beli Langsung</h2>
+        <p class="text-zinc-400 text-xs mt-0.5">Konfirmasi tujuan pengiriman pesanan Anda.</p>
+      </div>
+      <button onclick="closeModal('directBuyModal')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-2xl mb-4 flex justify-between items-center text-xs">
+      <span class="text-zinc-400">Total Tagihan:</span>
+      <span id="directTotalText" class="text-amber-400 font-black text-lg font-brand">Rp 0</span>
+    </div>
+
+    <form onsubmit="handleDirectSubmit(event)" class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama Pembeli</label>
+        <input type="text" id="dirCustName" required readonly class="w-full bg-zinc-950/70 border border-zinc-800 text-amber-400 font-bold rounded-xl px-3.5 py-2.5 text-sm outline-none cursor-not-allowed">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor WhatsApp / HP</label>
+        <input type="tel" id="dirCustPhone" required readonly class="w-full bg-zinc-950/70 border border-zinc-800 text-amber-400 font-bold rounded-xl px-3.5 py-2.5 text-sm outline-none cursor-not-allowed">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Alamat Lengkap Pengiriman</label>
+        <textarea id="dirCustAddress" rows="2" required placeholder="Jalan, RT/RW, Kecamatan, Kota..." class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Metode Pembayaran</label>
+        <select id="dirCustBank" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          <option value="BCA Virtual Account">BCA Virtual Account</option>
+          <option value="BRI Virtual Account">BRI Virtual Account</option>
+          <option value="Mandiri Virtual Account">Mandiri Virtual Account</option>
+          <option value="BNI Virtual Account">BNI Virtual Account</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-4 border-t border-zinc-800">
+        <button type="button" onclick="closeModal('directBuyModal')" class="px-4 py-2.5 text-zinc-400 hover:text-white text-xs font-bold">Batal</button>
+        <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/25">
+          Lanjutkan Pembayaran
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL NOTIFIKASI SUKSES -->
+<div id="successModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-7 text-center shadow-2xl">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <h3 class="text-xl font-black font-brand text-white mb-1">Pembayaran Selesai!</h3>
+    <p class="text-zinc-400 text-xs mb-6 leading-relaxed">
+      Pesanan telah dikonfirmasi dan langsung tersimpan ke riwayat belanja Anda.
+    </p>
+    <button onclick="closeSuccessModal()" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl transition text-xs uppercase tracking-wider">
+      OKE, KEMBALI KE KATALOG
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let selectedDirectProduct = null;
+
+  function renderBuyerCatalog() {
+    const prods = getProducts();
+    const available = prods.filter(p => p.stock > 0);
+    const grid = document.getElementById('catalogGrid');
+    const emptyBox = document.getElementById('emptyCatalogBox');
+
+    emptyBox.classList.toggle('hidden', available.length > 0);
+    grid.innerHTML = available.map(p => `
+      <div class="card-luxe rounded-2xl overflow-hidden flex flex-col">
+        <div class="h-48 w-full bg-zinc-950 overflow-hidden relative">
+          <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover">
+          <span class="absolute top-3 right-3 bg-zinc-950/80 backdrop-blur border border-zinc-800 text-amber-400 text-[10px] px-2.5 py-1 rounded-full font-bold">
+            Stok: ${p.stock}
+          </span>
+        </div>
+        <div class="p-5 flex flex-col flex-grow">
+          <h3 class="font-bold text-white text-base mb-1">${p.name}</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed flex-grow line-clamp-2">${p.desc}</p>
+          <div class="text-amber-400 font-extrabold text-lg font-brand mt-4 mb-4">${formatRupiah(p.price)}</div>
+          
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-zinc-800">
+            <button onclick="addToCart('${p.id}')" class="py-2.5 bg-zinc-900 hover:bg-zinc-800 text-amber-400 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-zinc-800">
+              <i class="fa-solid fa-cart-plus"></i>
+              <span>Keranjang</span>
+            </button>
+            <button onclick="attemptDirectBuy('${p.id}')" class="py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shadow-amber-500/20">
+              Beli Langsung
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function addToCart(productId) {
+    let cart = getCart();
+    cart.push({ productId, selected: true });
+    saveCart(cart);
+    window.location.href = '/cart';
+  }
+
+  // Wajibkan login sebelum membeli langsung
+  function attemptDirectBuy(productId) {
+    const user = getBuyerSession();
+    if (!user) {
+      openBuyerLoginModal(() => {
+        executeDirectBuyModal(productId);
+      });
+    } else {
+      executeDirectBuyModal(productId);
+    }
+  }
+
+  function executeDirectBuyModal(productId) {
+    const prods = getProducts();
+    const user = getBuyerSession();
+    selectedDirectProduct = prods.find(p => p.id === productId);
+    if (!selectedDirectProduct) return;
+
+    document.getElementById('dirCustName').value = user.name;
+    document.getElementById('dirCustPhone').value = user.phone;
+    document.getElementById('directTotalText').innerText = formatRupiah(selectedDirectProduct.price);
+    document.getElementById('directBuyModal').classList.remove('hidden');
+  }
+
+  function handleDirectSubmit(e) {
+    e.preventDefault();
+    if (!selectedDirectProduct) return;
+    const user = getBuyerSession();
+
+    let prods = getProducts();
+    let p = prods.find(item => item.id === selectedDirectProduct.id);
+    if (p && p.stock > 0) p.stock -= 1;
+    saveProducts(prods);
+
+    let orders = getOrders();
+    orders.unshift({
+      id: Math.floor(100000 + Math.random() * 900000),
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      customer: {
+        name: user.name,
+        phone: user.phone,
+        address: document.getElementById('dirCustAddress').value
+      },
+      payment: document.getElementById('dirCustBank').value,
+      items: [selectedDirectProduct],
+      total: selectedDirectProduct.price
+    });
+    saveOrders(orders);
+
+    closeModal('directBuyModal');
+    document.getElementById('successModal').classList.remove('hidden');
+  }
+
+  function closeSuccessModal() {
+    closeModal('successModal');
+    renderBuyerCatalog();
+  }
+
+  window.addEventListener('DOMContentLoaded', renderBuyerCatalog);
+</script>
+{% endblock %}

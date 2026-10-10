@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+{% block title %}Keranjang Belanja | GacorMart{% endblock %}
+
+{% block content %}
+<div class="flex items-center space-x-3 mb-8">
+  <a href="/" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-amber-400 transition">
+    <i class="fa-solid fa-arrow-left"></i>
+  </a>
+  <div>
+    <h1 class="text-2xl font-black font-brand text-white">Keranjang Belanja</h1>
+    <p class="text-zinc-400 text-xs">Centang barang yang ingin Anda beli sekarang.</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 space-y-3" id="cartItemsList"></div>
+
+  <div class="card-luxe rounded-2xl p-6 h-fit sticky top-28 shadow-xl">
+    <h2 class="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-4 pb-3 border-b border-zinc-800">Ringkasan Pesanan</h2>
+    
+    <div class="space-y-3 text-sm text-zinc-400 mb-6">
+      <div class="flex justify-between">
+        <span>Barang Terpilih</span>
+        <span id="selectedCount" class="text-white font-bold">0 produk</span>
+      </div>
+      <div class="flex justify-between items-baseline pt-3 border-t border-zinc-800">
+        <span class="text-zinc-200 font-medium">Total Harga</span>
+        <span id="cartTotalPrice" class="text-amber-400 font-black text-xl font-brand">Rp 0</span>
+      </div>
+    </div>
+
+    <button onclick="attemptCartCheckout()" class="w-full py-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl transition text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2">
+      <span>Beli Sekarang</span>
+      <i class="fa-solid fa-arrow-right"></i>
+    </button>
+    <a href="/" class="block text-center text-xs text-zinc-400 hover:text-amber-400 mt-4 transition font-medium">
+      + Tambah Pembelian Barang Lain
+    </a>
+  </div>
+</div>
+
+<!-- MODAL CHECKOUT KERANJANG -->
+<div id="cartCheckoutModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+    <div class="flex justify-between items-start pb-3 border-b border-zinc-800 mb-4">
+      <div>
+        <h2 class="text-lg font-bold font-brand text-white">Pengiriman & Pembayaran</h2>
+        <p class="text-zinc-400 text-xs mt-0.5">Selesaikan transaksi keranjang belanja Anda.</p>
+      </div>
+      <button onclick="closeModal('cartCheckoutModal')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-2xl mb-4 flex justify-between items-center text-xs">
+      <span class="text-zinc-400">Total Yang Dibayar:</span>
+      <span id="cartModalTotal" class="text-amber-400 font-black text-lg font-brand">Rp 0</span>
+    </div>
+
+    <form onsubmit="handleCartOrderSubmit(event)" class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama Pembeli</label>
+        <input type="text" id="cartCustName" required readonly class="w-full bg-zinc-950/70 border border-zinc-800 text-amber-400 font-bold rounded-xl px-3.5 py-2.5 text-sm outline-none cursor-not-allowed">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor Telepon</label>
+        <input type="tel" id="cartCustPhone" required readonly class="w-full bg-zinc-950/70 border border-zinc-800 text-amber-400 font-bold rounded-xl px-3.5 py-2.5 text-sm outline-none cursor-not-allowed">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Alamat Tujuan Pengiriman</label>
+        <textarea id="cartCustAddress" rows="2" required placeholder="Alamat lengkap penerima..." class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Pilihan Bank</label>
+        <select id="cartCustBank" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          <option value="BCA Virtual Account">BCA Virtual Account</option>
+          <option value="BRI Virtual Account">BRI Virtual Account</option>
+          <option value="Mandiri Virtual Account">Mandiri Virtual Account</option>
+          <option value="BNI Virtual Account">BNI Virtual Account</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-4 border-t border-zinc-800">
+        <button type="button" onclick="closeModal('cartCheckoutModal')" class="px-4 py-2.5 text-zinc-400 hover:text-white text-xs font-bold">Batal</button>
+        <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/25">
+          Lanjutkan Pembayaran
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL NOTIFIKASI SUKSES -->
+<div id="cartSuccessModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-7 text-center shadow-2xl">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <h3 class="text-xl font-black font-brand text-white mb-1">Pembayaran Selesai!</h3>
+    <p class="text-zinc-400 text-xs mb-6 leading-relaxed">
+      Pesanan telah berhasil diselesaikan dan dicatat pada riwayat belanja Anda.
+    </p>
+    <button onclick="finishCartAndGoHome()" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl transition text-xs uppercase tracking-wider">
+      OKE, KEMBALI KE BERANDA
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let pendingItems = [];
+
+  function renderCart() {
+    const cart = getCart();
+    const prods = getProducts();
+    const container = document.getElementById('cartItemsList');
+
+    if (cart.length === 0) {
+      container.innerHTML = `
+        <div class="p-12 text-center text-zinc-500 border border-dashed border-zinc-800 rounded-2xl card-luxe">
+          <i class="fa-solid fa-cart-shopping text-3xl mb-3 text-zinc-700"></i>
+          <p class="text-sm">Keranjang Anda masih kosong.</p>
+        </div>`;
+    } else {
+      container.innerHTML = cart.map((item, idx) => {
+        const prod = prods.find(p => p.id === item.productId);
+        if (!prod) return '';
+        return `
+          <div class="card-luxe p-4 rounded-2xl flex items-center space-x-4 border border-zinc-800">
+            <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelect(${idx})" class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
+            <img src="${prod.image}" class="w-16 h-16 rounded-xl object-cover bg-zinc-950 border border-zinc-800">
+            <div class="flex-grow">
+              <h4 class="font-bold text-sm text-zinc-200">${prod.name}</h4>
+              <div class="text-amber-400 font-bold text-sm mt-0.5">${formatRupiah(prod.price)}</div>
+            </div>
+            <button onclick="removeItem(${idx})" class="p-2 text-zinc-500 hover:text-rose-400 transition">
+              <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+    recalculateCart();
+  }
+
+  function toggleSelect(idx) {
+    let cart = getCart();
+    cart[idx].selected = !cart[idx].selected;
+    saveCart(cart);
+    renderCart();
+  }
+
+  function removeItem(idx) {
+    let cart = getCart();
+    cart.splice(idx, 1);
+    saveCart(cart);
+    renderCart();
+  }
+
+  function recalculateCart() {
+    const cart = getCart();
+    const prods = getProducts();
+    const selected = cart.filter(it => it.selected);
+
+    let total = 0;
+    selected.forEach(it => {
+      const p = prods.find(item => item.id === it.productId);
+      if (p) total += p.price;
+    });
+
+    document.getElementById('selectedCount').innerText = `${selected.length} produk`;
+    document.getElementById('cartTotalPrice').innerText = formatRupiah(total);
+  }
+
+  function attemptCartCheckout() {
+    const cart = getCart();
+    const selected = cart.filter(it => it.selected);
+
+    if (selected.length === 0) {
+      alert('Centang minimal 1 barang di keranjang sebelum checkout.');
+      return;
+    }
+
+    const user = getBuyerSession();
+    if (!user) {
+      openBuyerLoginModal(() => {
+        executeCartCheckoutModal();
+      });
+    } else {
+      executeCartCheckoutModal();
+    }
+  }
+
+  function executeCartCheckoutModal() {
+    const cart = getCart();
+    const prods = getProducts();
+    const user = getBuyerSession();
+    const selected = cart.filter(it => it.selected);
+
+    pendingItems = selected.map(it => prods.find(p => p.id === it.productId)).filter(Boolean);
+    const total = pendingItems.reduce((acc, curr) => acc + curr.price, 0);
+
+    document.getElementById('cartCustName').value = user.name;
+    document.getElementById('cartCustPhone').value = user.phone;
+    document.getElementById('cartModalTotal').innerText = formatRupiah(total);
+    document.getElementById('cartCheckoutModal').classList.remove('hidden');
+  }
+
+  function handleCartOrderSubmit(e) {
+    e.preventDefault();
+    let prods = getProducts();
+    let cart = getCart();
+    const user = getBuyerSession();
+
+    pendingItems.forEach(item => {
+      let p = prods.find(prod => prod.id === item.id);
+      if (p && p.stock > 0) p.stock -= 1;
+    });
+    saveProducts(prods);
+
+    let orders = getOrders();
+    orders.unshift({
+      id: Math.floor(100000 + Math.random() * 900000),
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      customer: {
+        name: user.name,
+        phone: user.phone,
+        address: document.getElementById('cartCustAddress').value
+      },
+      payment: document.getElementById('cartCustBank').value,
+      items: pendingItems,
+      total: pendingItems.reduce((acc, curr) => acc + curr.price, 0)
+    });
+    saveOrders(orders);
+
+    const boughtIds = pendingItems.map(i => i.id);
+    cart = cart.filter(it => !boughtIds.includes(it.productId));
+    saveCart(cart);
+
+    closeModal('cartCheckoutModal');
+    document.getElementById('cartSuccessModal').classList.remove('hidden');
+  }
+
+  function finishCartAndGoHome() {
+    window.location.href = '/';
+  }
+
+  window.addEventListener('DOMContentLoaded', renderCart);
+</script>
+{% endblock %}
