@@ -1,107 +1,266 @@
-// Register dengan Fallback Otomatis
-async function handleBuyerRegisterSubmit(e) {
-  e.preventDefault();
-  const errBox = document.getElementById('registerErrorMsg');
-  errBox.classList.add('hidden');
-
-  const name = document.getElementById('regName').value.trim();
-  const username = document.getElementById('regUsername').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const phone = document.getElementById('regPhone').value.trim();
-  const gender = document.querySelector('input[name="regGender"]:checked').value;
-  const pass = document.getElementById('regPassword').value;
-  const passConfirm = document.getElementById('regPasswordConfirm').value;
-
-  if (pass !== passConfirm) {
-    errBox.innerText = 'Validasi gagal: Password dan Konfirmasi Password tidak sesuai!';
-    errBox.classList.remove('hidden');
-    return;
-  }
-
-  const payload = { name, username, email, phone, gender, password: pass };
-
-  try {
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}GacorMart{% endblock %}</title>
+  
+  <!-- CDN Tailwind CSS & Font Awesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
     
-    if (res.ok) {
-      alert('Registrasi berhasil!');
-      switchToLoginModal();
-      document.getElementById('loginIdentifier').value = username;
-      document.getElementById('loginPhone').value = phone;
-      return;
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #09090b;
+      color: #fafaf9;
     }
-  } catch (error) {
-    console.warn("Serverless Vercel read-only mode aktif, beralih ke local JSON storage.");
-  }
-
-  // FALLBACK CLIENT-SIDE JSON JIKA VERCEL SERVERLESS RESTRICTED
-  let localUsers = JSON.parse(localStorage.getItem('gm_registered_users')) || [];
-  if (localUsers.some(u => u.username === username.toLowerCase() || u.phone === phone)) {
-    errBox.innerText = 'Akun / No. Telepon sudah terdaftar!';
-    errBox.classList.remove('hidden');
-    return;
-  }
-  localUsers.push(payload);
-  localStorage.setItem('gm_registered_users', JSON.stringify(localUsers));
-
-  alert('Registrasi berhasil!');
-  switchToLoginModal();
-  document.getElementById('loginIdentifier').value = username;
-  document.getElementById('loginPhone').value = phone;
-}
-
-// Login dengan Fallback Otomatis
-async function handleBuyerLoginSubmit(e) {
-  e.preventDefault();
-  const errBox = document.getElementById('loginErrorMsg');
-  errBox.classList.add('hidden');
-
-  const identifier = document.getElementById('loginIdentifier').value.trim();
-  const phone = document.getElementById('loginPhone').value.trim();
-  const pass = document.getElementById('loginPassword').value;
-
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, phone, password: pass })
-    });
     
-    if (res.ok) {
-      const result = await res.json();
-      setBuyerSession(result.user);
-      closeModal('buyerLoginModal');
-      if (onBuyerLoginSuccessCallback) onBuyerLoginSuccessCallback();
-      return;
+    .font-brand {
+      font-family: 'Space Grotesk', sans-serif;
     }
-  } catch (error) {
-    console.warn("Beralih ke verifikasi local JSON storage.");
-  }
+    
+    .card-luxe {
+      background: linear-gradient(180deg, #18181b 0%, #101012 100%);
+      border: 1px solid #27272a;
+      transition: all 0.25s ease;
+    }
+    
+    .card-luxe:hover {
+      border-color: rgba(245, 158, 11, 0.45);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
 
-  // FALLBACK CLIENT-SIDE VERIFIKASI
-  let localUsers = JSON.parse(localStorage.getItem('gm_registered_users')) || [];
-  const found = localUsers.find(u => 
-    (u.username === identifier.toLowerCase() || u.email === identifier.toLowerCase() || u.name.toLowerCase() === identifier.toLowerCase()) && 
-    u.phone === phone
-  );
+  <!-- NAVBAR UTAMA -->
+  <header class="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <!-- LOGO TOKO -->
+      <div id="brandLogoContainer" class="flex items-center space-x-3 cursor-pointer">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg shadow-amber-500/20">
+          G
+        </div>
+        <div>
+          <span class="text-2xl font-black font-brand tracking-tight text-white">
+            GACOR<span class="text-amber-500">MART</span>
+          </span>
+          <span id="roleSubtext" class="block text-[9px] uppercase tracking-widest text-zinc-400 font-bold -mt-1">Luxury Storefront</span>
+        </div>
+      </div>
 
-  if (!found) {
-    errBox.innerHTML = 'Akun belum terdaftar! Silakan <button type="button" onclick="switchToRegisterModal()" class="underline font-bold text-amber-400">Daftar Akun Baru</button>';
-    errBox.classList.remove('hidden');
-    return;
-  }
+      <!-- NAVIGASI PEMBELI -->
+      <nav id="buyerNavMenu" class="flex items-center space-x-3 sm:space-x-4">
+        <a href="/" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-zinc-300 hover:text-amber-400">
+          <i class="fa-solid fa-store mr-1.5"></i> Katalog
+        </a>
+        
+        <!-- LINK RIWAYAT BELANJA (HANYA MUNCUL JIKA SUDAH LOGIN) -->
+        <a href="/history" id="navHistoryLink" class="hidden px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-zinc-300 hover:text-amber-400">
+          <i class="fa-solid fa-receipt mr-1.5"></i> Riwayat Belanja
+        </a>
 
-  if (found.password !== pass) {
-    errBox.innerText = 'Password salah!';
-    errBox.classList.remove('hidden');
-    return;
-  }
+        <!-- KERANJANG BELANJA -->
+        <a href="/cart" class="relative p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 text-zinc-200 hover:text-amber-400 transition">
+          <i class="fa-solid fa-cart-shopping text-base"></i>
+          <span id="globalCartBadge" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-zinc-950 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+        </a>
+        
+        <!-- STATUS LOGIN / REGISTER PEMBELI -->
+        <div id="buyerProfileNav" class="flex items-center">
+          <button type="button" onclick="openBuyerLoginModal()" id="btnBuyerLoginNav" class="px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition">
+            <i class="fa-solid fa-user mr-1.5"></i> Masuk / Daftar
+          </button>
+          <div id="buyerLoggedBox" class="hidden items-center gap-2">
+            <span id="buyerNameGreeting" class="text-xs text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl"></span>
+            <button type="button" onclick="logoutBuyer()" title="Keluar Akun Pembeli" class="text-zinc-500 hover:text-rose-400 p-2 text-xs">
+              <i class="fa-solid fa-power-off"></i>
+            </button>
+          </div>
+        </div>
 
-  setBuyerSession(found);
-  closeModal('buyerLoginModal');
-  if (onBuyerLoginSuccessCallback) onBuyerLoginSuccessCallback();
-}
+        <!-- TOMBOL MENUJU PORTAL PENJUAL -->
+        <button type="button" onclick="triggerSellerLoginPrompt()" class="ml-2 px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Portal Penjual</span>
+        </button>
+      </nav>
+
+      <!-- NAVIGASI PENJUAL (TERKUNCI DI DASHBOARD) -->
+      <nav id="sellerNavMenu" class="hidden items-center space-x-4">
+        <span class="text-xs uppercase font-extrabold tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-xl">
+          <i class="fa-solid fa-crown mr-1"></i> Mode Administrator
+        </span>
+        <button type="button" onclick="logoutSeller()" class="px-4 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-900/50 text-rose-300 text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Keluar Portal</span>
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- KONTEN DINAMIS -->
+  <main class="max-w-7xl mx-auto px-6 py-10 flex-grow w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- 1. MODAL LOGIN PEMBELI -->
+  <div id="buyerLoginModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+          <i class="fa-solid fa-user-lock"></i>
+        </div>
+        <h3 class="text-xl font-bold font-brand text-white">Login Pembeli</h3>
+        <p class="text-zinc-400 text-xs mt-1">Masukkan data akun Anda yang telah terdaftar.</p>
+      </div>
+
+      <form onsubmit="handleBuyerLoginSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama / Username / Email</label>
+          <input type="text" id="loginIdentifier" required placeholder="Masukkan nama, username, atau email" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor Telepon / WhatsApp</label>
+          <input type="tel" id="loginPhone" required placeholder="08xxxxxxxxxx" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+
+        <div id="loginErrorMsg" class="hidden text-rose-400 text-xs bg-rose-950/40 border border-rose-900/60 p-2.5 rounded-xl"></div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/20">
+            Masuk Sekarang
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-800 text-center text-xs text-zinc-400">
+        Belum memiliki akun?
+        <button type="button" onclick="switchToRegisterModal()" class="text-amber-400 font-bold hover:underline ml-1">
+          Daftar Akun Baru
+        </button>
+      </div>
+      <div class="text-center mt-3">
+        <button type="button" onclick="closeModal('buyerLoginModal')" class="text-zinc-500 hover:text-zinc-300 text-xs">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MODAL REGISTER PEMBELI -->
+  <div id="buyerRegisterModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh]">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <h3 class="text-xl font-bold font-brand text-white">Daftar Akun Pembeli</h3>
+        <p class="text-zinc-400 text-xs mt-1">Lengkapi data pendaftaran Anda untuk membuat akun.</p>
+      </div>
+
+      <form onsubmit="handleBuyerRegisterSubmit(event)" class="space-y-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nama Lengkap</label>
+            <input type="text" id="regName" required placeholder="Contoh: Budi Santoso" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Username</label>
+            <input type="text" id="regUsername" required placeholder="budisantoso12" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Email</label>
+            <input type="email" id="regEmail" required placeholder="budi@example.com" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Nomor Telepon / WhatsApp</label>
+            <input type="tel" id="regPhone" required placeholder="08xxxxxxxxxx" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1.5">Jenis Kelamin</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer hover:border-zinc-700">
+              <input type="radio" name="regGender" value="Pria" checked class="accent-amber-500">
+              <span class="text-xs text-zinc-200"><i class="fa-solid fa-mars mr-1 text-blue-400"></i> Pria</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer hover:border-zinc-700">
+              <input type="radio" name="regGender" value="Wanita" class="accent-amber-500">
+              <span class="text-xs text-zinc-200"><i class="fa-solid fa-venus mr-1 text-pink-400"></i> Wanita</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Password</label>
+            <input type="password" id="regPassword" required placeholder="Minimal 6 karakter" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase font-bold text-zinc-400 mb-1">Konfirmasi Password (Validasi 2x)</label>
+            <input type="password" id="regPasswordConfirm" required placeholder="Ulangi password di atas" class="w-full bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div id="registerErrorMsg" class="hidden text-rose-400 text-xs bg-rose-950/40 border border-rose-900/60 p-2.5 rounded-xl"></div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/20">
+            Daftar Akun Sekarang
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-800 text-center text-xs text-zinc-400">
+        Sudah memiliki akun terdaftar?
+        <button type="button" onclick="switchToLoginModal()" class="text-amber-400 font-bold hover:underline ml-1">
+          Masuk di Sini
+        </button>
+      </div>
+      <div class="text-center mt-3">
+        <button type="button" onclick="closeModal('buyerRegisterModal')" class="text-zinc-500 hover:text-zinc-300 text-xs">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. MODAL KONFIRMASI AKSES PENJUAL -->
+  <div id="sellerConfirmModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center">
+      <div class="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 class="text-lg font-bold font-brand text-white mb-2">Konfirmasi Akses Penjual</h3>
+      <p class="text-zinc-400 text-xs mb-6 leading-relaxed">
+        Anda Ingin Login Sebagai Penjual? Halaman ini khusus untuk pengelolaan barang dan stok toko.
+      </p>
+      <div class="grid grid-cols-2 gap-3">
+        <button type="button" onclick="closeSellerConfirmModal(true)" class="w-full py-3 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-800 text-zinc-300 text-xs font-bold uppercase tracking-wider transition">
+          No (Kembali)
+        </button>
+        <button type="button" onclick="proceedToSellerLoginForm()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition">
+          Yes (Lanjut)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MODAL KREDENSIAL PENJUAL -->
+  <div id="sellerCredentialModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-9
